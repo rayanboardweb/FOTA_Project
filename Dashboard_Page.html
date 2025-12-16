@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="fa" dir="ltr">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="switch.css">
+    <title>ESP32 Dashboard Full Width</title>
+
+    <style>
+        /*
+           ** 1. CSS Variables for Themes **
+        */
+        :root {
+            --bg-color-light: #f4f7f6;
+            --bg-color-dark: #1e1e2f;
+            --primary-text-light: #333333;
+            --primary-text-dark: #e8e8e8;
+            --secondary-text-light: #666666;
+            --secondary-text-dark: #aaaaaa;
+            --accent-color: #007bff;
+            --accent-color-hover: #0056b3;
+            --input-bg-light: #e0e4e8;
+            --input-bg-dark: #3a3a50;
+            --border-color-light: #dddddd;
+            --border-color-dark: #444466;
+            --card-bg-light: #ffffff;
+            /* پس‌زمینه کارت‌ها */
+            --card-bg-dark: #2c2c44;
+            --card-shadow-light: rgba(0, 0, 0, 0.08);
+            --card-shadow-dark: rgba(0, 0, 0, 0.2);
+            --icon-color-light: #ffc107;
+            --icon-color-dark: #f0f0f0;
+        }
+
+        /* حالت پایه (Light Theme) */
+        .light-theme {
+            --bg-main: var(--bg-color-light);
+            --text-main: var(--primary-text-light);
+            --text-secondary: var(--secondary-text-light);
+            --bg-input: var(--input-bg-light);
+            --border: var(--border-color-light);
+            --theme-icon-color: var(--primary-text-light);
+            --card-shadow: var(--card-shadow-light);
+            --card-bg: var(--card-bg-light);
+        }
+
+        /* حالت تاریک (Dark Theme) */
+        .dark-theme {
+            --bg-main: var(--bg-color-dark);
+            --text-main: var(--primary-text-dark);
+            --text-secondary: var(--secondary-text-dark);
+            --bg-input: var(--input-bg-dark);
+            --border: var(--border-color-dark);
+            --theme-icon-color: var(--icon-color-dark);
+            --card-shadow: var(--card-shadow-dark);
+            --card-bg: var(--card-bg-dark);
+        }
+
+        /*
+           ** 2. General Reset and Layout **
+        */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Tahoma', 'Arial', sans-serif;
+            font-size: 16px;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /*
+           ** 3. Main Content (تمام عرض) **
+        */
+        .main-content {
+            flex-grow: 1;
+            /* حالا کل عرض صفحه را می‌گیرد */
+            padding: 0 30px 30px 30px;
+            min-height: 100vh;
+        }
+
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 30px;
+            padding-bottom: 15px;
+            margin-bottom: 0;
+            color: var(--accent-color);
+        }
+
+        .header-title {
+            direction: ltr;
+            text-align: left;
+            margin-right: auto;
+            flex-grow: 1;
+        }
+
+        /* دکمه تم */
+        .theme-toggle-button {
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            transition: background-color 0.3s, border-color 0.3s, transform 0.2s;
+            color: var(--theme-icon-color);
+            margin-right: 15px;
+        }
+
+        .theme-toggle-button:hover {
+            background-color: rgba(0, 123, 255, 0.1);
+            border-color: var(--accent-color);
+            transform: scale(1.05);
+        }
+
+        /* ⬅️ Horizontal Navigation Tabs ⬅️ */
+        .navigation {
+            display: flex;
+            flex-direction: row;
+            direction: ltr;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 30px;
+            padding-right: 15px;
+        }
+
+        .nav-item {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 10px 20px;
+            margin-bottom: -2px;
+            border-radius: 6px 6px 0 0;
+            transition: color 0.2s, border-color 0.2s;
+            text-align: center;
+            border-bottom: 2px solid transparent;
+        }
+
+        .nav-item:hover {
+            color: var(--text-main);
+            border-bottom: 2px solid var(--text-secondary);
+        }
+
+        .nav-item.active {
+            color: var(--accent-color);
+            border-bottom: 2px solid var(--accent-color);
+            font-weight: bold;
+
+            /* -------------------------------------- */
+            /* ✅ تغییرات جدید برای رنگ پس‌زمینه کمرنگ */
+            /* -------------------------------------- */
+            background-color: rgba(0, 123, 255, 0.1);
+            /* آبی کمرنگ با 10% شفافیت */
+            border-radius: 6px 6px 0 0;
+            /* تطابق با border-radius بالایی */
+        }
+
+        /*
+           ** 4. Data Blocks and Graphics **
+        */
+        .data-io {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .io-block,
+        .graphic-block {
+            /* flex: 1; */
+            /* min-width: 300px; */
+            flex: 0 0 100%;
+            /* اجبار به اشغال کامل عرض والد */
+            padding: 20px;
+            background-color: var(--card-bg);
+            /* استفاده از متغیر جدید کارت */
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 6px 10px var(--card-shadow);
+            transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+
+
+        .graphic-block h2 {
+            margin-bottom: 15px;
+            color: var(--accent-color);
+        }
+
+
+        /* Input/Button Styles */
+        .io-block h2 {
+            color: var(--accent-color);
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+
+        .text-input {
+
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background-color: var(--bg-input);
+            color: var(--text-main);
+            font-size: 1em;
+            transition: border-color 0.3s, background-color 0.3s;
+            text-align: left;
+
+        }
+
+        .action-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s, opacity 0.2s;
+        }
+
+        .primary {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .secondary {
+            background-color: var(--text-secondary);
+            color: white;
+        }
+
+        .primary:hover {
+            background-color: var(--accent-color-hover);
+        }
+
+        .secondary:hover {
+            opacity: 0.8;
+        }
+
+
+        /*
+           ** 5. Media Query (موبایل) **
+        */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 15px;
+            }
+
+            .main-header {
+                padding-top: 15px;
+                /* کمی فضای بالا برای موبایل */
+            }
+
+            .data-io {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+
+
+
+        /* _____________________________________ LED STYLE _____________________________________ */
+        /* --- استایل پایه LED (خاموش) --- */
+
+        /* ❗️ تغییر از #status-led به .status-led (انتخابگر کلاس) */
+        .status-led {
+            width: 40px;
+            height: 20px;
+            border-radius: 10%;
+            background-color: #444249;
+            box-shadow: none;
+            margin: 20px auto 5px auto;
+            /* کمی margin بالا و پایین برای چیدمان بهتر */
+            transition: background-color 0.3s, box-shadow 0.3s;
+            /* این خط CSS برای LEDهاست که در گروه سوئیچ قرار دارند */
+            /* display: block; و سایر استایل‌های پیش‌فرض آن کافی است */
+        }
+
+        /* --- حالت روشن LED (با افکت نئون) --- */
+        .led-on {
+            background-color: #00ffff;
+            box-shadow: 0 0 5px #00ffff,
+                0 0 15px #00ffff,
+                0 0 25px #00ffff;
+
+            animation: neon-glow 1s infinite alternate;
+
+        }
+
+        /* --- تعریف انیمیشن نئون (Color Transition) --- */
+        @keyframes neon-glow {
+            from {
+                box-shadow: 0 0 5px #2f5050, 0 0 15px #2f5050;
+                background-color: #2f5050;
+            }
+
+            to {
+                /* برای ایجاد حس چشمک زدن (نوسان) در نئون، بهتر است حداقل یکی از مقادیر (مثل box-shadow یا background-color) کمی تغییر کند. */
+                box-shadow: 0 0 3px #00ffff, 0 0 10prgba(0, 255, 255, 0)ff;
+                /* کاهش درخشش */
+                background-color: #00ffff;
+                /* تغییر جزئی در رنگ */
+            }
+        }
+
+        /* ------------------------------------- */
+        /* سبک و انیمیشن لودینگ چرخنده (status_text_style) */
+        /* ------------------------------------- */
+        .status_text_style {
+            font-weight: bold;
+            /* margin-top: 20px; */
+            display: inline-block;
+            vertical-align: middle;
+            /* اگر فقط از inline-block استفاده می‌کنید، نیازی به استایل خاصی نیست */
+        }
+
+        /* ------------------------------------- */
+        /* سبک و انیمیشن لودینگ چرخنده (Spinner) */
+        /* ------------------------------------- */
+        .loader {
+            border: 5px solid #a7a2a2;
+            border-top: 5px solid #007bff;
+            /* رنگ سبز */
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            animation: spin 1s linear infinite;
+            /* انیمیشن چرخش */
+            display: inline-block;
+            vertical-align: middle;
+            /* margin: 20px; */
+            /* display: none; */
+            /* پیش فرض: مخفی */
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+
+
+<body class="light-theme">
+    <main class="main-content">
+        <header class="main-header">
+            <h1 class="header-title">ESP32 Control Dashboard</h1>
+
+            <button id="theme-toggle" class="theme-toggle-button">
+                <span id="theme-icon">☀️</span>
+            </button>
+        </header>
+
+        <nav class="navigation">
+            <a href="Dashboard_Page.html" class="nav-item active">Dashboard</a>
+            <a href="LiveView_Page.html" class="nav-item">Live View</a>
+            <a href="Setting_Page.html" class="nav-item">Setting</a>
+        </nav>
+
+        <section class="data-io">
+
+
+            <div class="io-block">
+                <h2>Update Firmware Online</h2>
+                <label for="file_input">
+                    Press
+                    <span style="font-weight: bold; color: #007bff; font-size: 1.0em;">Upgrade</span>
+                    button to update firmware
+                </label>
+                <br>
+                <br>
+                <p class="status_text_style" id="status"></p>
+                <div id="loading_spinner" class="loader"></div>
+                <br>
+                <br>
+                <button class="action-button primary" type='submit' id="submit_button_online">Upgrade</button>
+            </div>
+
+
+
+            <div class="io-block">
+                <h2>Update Firmware Offline</h2>
+                <form id='file_upload_form'>
+                    <label for="file_input">
+                        Select
+                        <span style="font-weight: bold; color: #007bff; font-size: 1.0em;">firmware.bin</span>
+                        File ->
+                    </label>
+                    <input type='file' name='data' id="file_input" required>
+                    <span id="file_size_display" style="text-align: left;margin-right: 5px;  font-size: 0.9em;"></span>
+                    <br>
+                    <br>
+                    <p class="status_text_style" id="status">updated...</p>
+                    <div id="loading_spinner" class="loader"></div>
+                    <br>
+                    <br>
+                    <button class="action-button primary" type='submit' id="submit_button">Upgrade</button>
+                </form>
+            </div>
+
+            <div class="io-block ">
+                <h2>LED & SWICTH Controls</h2>
+                <div class="control-group">
+                    <div class="switch-group">
+                        <div id="status-led1" class="status-led"></div>
+
+                        <label for="switch">LED1</label>
+                    </div>
+
+                    <div class="switch-group">
+                        <div id="status-led2" class="status-led"></div>
+
+                        <label for="switch">LED2</label>
+                    </div>
+
+                    <div class="switch-group">
+                        <div id="status-led3" class="status-led"></div>
+
+                        <label for="switch">LED3</label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="switch-group">
+                        <div class='toggle' id='switch1'>
+                            <div class='toggle-text-off'>OFF</div>
+                            <div class='glow-comp'></div>
+                            <div class='toggle-button'></div>
+                            <div class='toggle-text-on'>ON</div>
+                        </div><br>
+                        <label for="switch">Switch 1</label>
+                    </div>
+
+                    <div class="switch-group">
+                        <div class='toggle' id='switch2'>
+                            <div class='toggle-text-off'>OFF</div>
+                            <div class='glow-comp'></div>
+                            <div class='toggle-button'></div>
+                            <div class='toggle-text-on'>ON</div>
+                        </div><br>
+                        <label for="switch2">Switch 2</label>
+                    </div>
+
+                    <div class="switch-group">
+                        <div class='toggle' id='switch3'>
+                            <div class='toggle-text-off'>OFF</div>
+                            <div class='glow-comp'></div>
+                            <div class='toggle-button'></div>
+                            <div class='toggle-text-on'>ON</div>
+                        </div><br>
+                        <label for="switch3">Switch 3</label>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="io-block">
+                <h2>Send Commands to STM32</h2>
+                <input type="text" placeholder="Examlpe: Hellow STM32" class="text-input">
+                <button class="action-button primary">Send</button>
+            </div>
+
+            <div class="io-block receive-block">
+                <h2>Receive Commands from STM32</h2>
+                <input type="text" placeholder="Recieved Text" readonly="" class="text-input readonly-input">
+                <button class="action-button primary">Receive</button>
+            </div>
+        </section>
+    </main>
+
+    <script>
+
+        // _________________________ online upgrade Script __________________________
+        document.addEventListener('DOMContentLoaded', function () {
+            // 1. انتخاب عناصر DOM مورد نیاز
+            const upgradeButton = document.getElementById('submit_button_online');
+            const statusText = document.getElementById('status');
+            const loadingSpinner = document.getElementById('loading_spinner');
+
+            // آدرس سرور ESP برای شروع به‌روزرسانی
+            // این آدرس باید توسط برنامه ESP شما تنظیم شده باشد.
+            const espUpdateUrl = '/download';
+
+            // تابعی برای نمایش پیام وضعیت
+            function setStatus(message, isSuccess = false) {
+                statusText.textContent = message;
+                // تغییر رنگ بر اساس موفقیت یا شکست
+                if (isSuccess) {
+                    statusText.style.color = 'green';
+                } else if (message.includes('updating')) {
+                    statusText.style.color = '#007bff'; // آبی برای حالت در حال انجام
+                }
+                else {
+                    statusText.style.color = 'red';
+                }
+            }
+
+            // 2. گوش دادن به رویداد کلیک دکمه
+            upgradeButton.addEventListener('click', async function () {
+                // غیرفعال کردن دکمه و نمایش لودر
+                upgradeButton.disabled = true;
+                loadingSpinner.style.display = 'block'; // فرض کنید در CSS به صورت پیش‌فرض hidden است
+                setStatus('updating');
+
+                try {
+                    // 3. ارسال درخواست HTTP (معمولاً POST یا GET برای شروع OTA)
+                    // از متد POST استفاده می‌کنیم که امن‌تر و رایج‌تر است.
+                    const response = await fetch(espUpdateUrl, {
+                        method: 'POST', // یا 'GET'، بر اساس تنظیمات ESP
+                        headers: {
+                            'Content-Type': 'application/json'
+                            // می‌توانید هدرهای احراز هویت لازم را نیز اضافه کنید
+                        },
+                        // در صورت نیاز به ارسال دیتای اضافی
+                        // body: JSON.stringify({ action: 'start_ota' }) 
+                    });
+
+                    // 4. پردازش پاسخ سرور
+                    if (response.ok) {
+                        // اگر کد وضعیت HTTP در محدوده 200-299 باشد
+                        const resultText = await response.text();
+
+                        // در اینجا شما باید منطق پردازش پاسخ ESP خود را قرار دهید.
+                        // اگر ESP پاسخ متنی "SUCCESS" یا "OK" می‌دهد:
+                        if (resultText.toUpperCase().includes('SUCCESS') || resultText.toUpperCase().includes('OK')) {
+                            setStatus('✅ به‌روزرسانی فریمور با موفقیت انجام شد.', true);
+                        } else {
+                            // پاسخ موفقیت‌آمیز HTTP، اما محتوای آن نشان دهنده شکست است (مثلاً "ERROR: Not enough memory")
+                            setStatus(`❌ به‌روزرسانی انجام نشد: ${resultText}`, false);
+                        }
+                    } else {
+                        // اگر کد وضعیت HTTP خطا باشد (مثلاً 404 یا 500)
+                        const errorText = await response.text();
+                        setStatus(`❌ خطای سرور: ${response.status} - ${errorText.substring(0, 100)}`, false);
+                    }
+                } catch (error) {
+                    // 5. مدیریت خطاهای شبکه یا اتصال
+                    console.error('Fetch error:', error);
+                    setStatus(`❌ خطای اتصال به ESP: ${error.message}`, false);
+                } finally {
+                    // بازگرداندن وضعیت اولیه دکمه و لودر
+                    loadingSpinner.style.display = 'none';
+                    upgradeButton.disabled = false;
+                }
+            });
+        });
+
+
+
+
+
+
+
+
+
+        // _________________________ Theme Toggle Script __________________________
+        const toggleButton = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const body = document.body;
+
+        // تابع تغییر تم (خارج از DOMContentLoaded قرار دارد چون نیاز به DOM کامل ندارد)
+        function toggleTheme() {
+            const isLightTheme = body.classList.contains('light-theme');
+            if (isLightTheme) {
+                body.classList.remove('light-theme');
+                body.classList.add('dark-theme');
+                themeIcon.textContent = '🌙';
+            } else {
+                body.classList.remove('dark-theme');
+                body.classList.add('light-theme');
+                themeIcon.textContent = '☀️';
+            }
+        }
+
+        // گوش دادن به رویداد کلیک دکمه
+        toggleButton.addEventListener('click', toggleTheme);
+
+        // تنظیم اولیه آیکون بر اساس تم فعلی
+        if (body.classList.contains('dark-theme')) {
+            themeIcon.textContent = '🌙';
+        } else {
+            themeIcon.textContent = '☀️';
+        }
+
+
+        // _________________________ DOMContentLoaded: ادغام تمام منطق‌های وابسته به DOM __________________________
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // ------------------ 1. منطق نمایش حجم فایل ------------------
+            const fileInput = document.getElementById('file_input');
+            const sizeDisplay = document.getElementById('file_size_display');
+            sizeDisplay.textContent = 'size:--';
+
+            fileInput.addEventListener('change', function (event) {
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    const fileSizeInBytes = file.size;
+                    const formattedSize = formatBytes(fileSizeInBytes);
+                    sizeDisplay.textContent = `size:${formattedSize}`;
+                } else {
+                    sizeDisplay.textContent = 'size:--';
+                }
+            });
+
+            function formatBytes(bytes, decimals = 2) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const dm = decimals < 0 ? 0 : decimals;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+            }
+
+            // ------------------ 2. منطق کلید و LED ------------------
+            const toggleSwitch1 = document.getElementById('switch1');
+            const toggleSwitch2 = document.getElementById('switch2');
+            const toggleSwitch3 = document.getElementById('switch3');
+            const statusLED1 = document.getElementById('status-led1');
+            const statusLED2 = document.getElementById('status-led2');
+            const statusLED3 = document.getElementById('status-led3');
+
+            toggleSwitch1.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                // تغییر وضعیت کلید
+                this.classList.toggle('toggle-on');
+
+                // 👈 این خط LED را خاموش/روشن می‌کند
+                statusLED1.classList.toggle('led-on');
+            });
+            toggleSwitch2.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                // تغییر وضعیت کلید
+                this.classList.toggle('toggle-on');
+
+                // 👈 این خط LED را خاموش/روشن می‌کند
+                statusLED2.classList.toggle('led-on');
+            });
+            toggleSwitch3.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                // تغییر وضعیت کلید
+                this.classList.toggle('toggle-on');
+
+                // 👈 این خط LED را خاموش/روشن می‌کند
+                statusLED3.classList.toggle('led-on');
+            });
+            // --------------------------------------------------------
+
+        }); // پایان DOMContentLoaded
+
+        // _____________________________ upload scipt _________________________
+        document.getElementById('file_upload_form').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const fileInput = document.getElementById('file_input');
+            const statusMessage = document.getElementById('status');
+            const spinner = document.getElementById('loading_spinner');
+            const submitButton = document.getElementById('submit_button');
+
+            // صفر کردن وضعیت قبلی
+            statusMessage.textContent = '';
+            // statusMessage.style.color = '#333';
+
+            if (fileInput.files.length === 0) {
+                statusMessage.textContent = 'Please Select a File❌';
+                // statusMessage.style.color = '#f44336';
+                return;
+            }
+
+            // **شروع لودینگ**
+            spinner.style.display = 'block'; // نمایش لودینگ
+            submitButton.disabled = true;    // غیرفعال کردن دکمه
+            statusMessage.textContent = 'Uploading Firmware...';
+
+
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('data', file, file.name);
+
+            const xhr = new XMLHttpRequest();
+
+            xhr.onload = function () {
+                // **پایان لودینگ در صورت موفقیت**
+                spinner.style.display = 'none';
+                submitButton.disabled = false;
+
+                if (xhr.status === 200) {
+                    statusMessage.textContent = 'Firmware Updated Successfully✅';
+                    // statusMessage.style.color = '#4CAF50';
+                } else {
+                    statusMessage.textContent = `Firmware Update Failed❌${xhr.status}) ${xhr.responseText}`;
+                    // statusMessage.style.color = '#f44336';
+                }
+            };
+
+            xhr.onerror = function () {
+                // **پایان لودینگ در صورت خطا**
+                spinner.style.display = 'none';
+                submitButton.disabled = false;
+
+                statusMessage.textContent = 'Network Error Occurred; Please check your connection❌';
+                // statusMessage.style.color = '#f44336';
+            };
+
+            xhr.open('POST', '/upload');
+            xhr.send(formData);
+        });
+
+    </script>
+
+</body>
+
+</html>
